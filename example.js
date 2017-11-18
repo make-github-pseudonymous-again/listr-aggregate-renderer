@@ -78,7 +78,8 @@ const tasks = new Listr([
 		})
 	}
 ], {
-	renderer
+	renderer,
+	aggregate: true
 });
 
 tasks.run().catch(err => {

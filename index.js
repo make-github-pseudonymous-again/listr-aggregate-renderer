@@ -13,10 +13,24 @@ const renderHelper = (tasks, options, level) => {
 	let output = [];
 
 	for (const task of tasks) {
+
+		if (options.hide === true && task.isCompleted()) continue;
+
 		if (task.isEnabled()) {
+
 			const skipped = task.isSkipped() ? ` ${chalk.dim('[skipped]')}` : '';
 
-			output.push(indentString(` ${utils.getSymbol(task, options)} ${task.title}${skipped}`, level, '  '));
+			if ( options.showSubtasks !== false && options.aggregate === true && task.subtasks.length > 0 ) {
+				let done = 0;
+				for ( const t of task.subtasks ) done += t.isCompleted();
+				let total = task.subtasks.length;
+				let ratio = (done / total * 100).toFixed();
+				let progress = `(${done}/${total} ~ ${ratio}%)`;
+				output.push(indentString(` ${utils.getSymbol(task, options)} ${task.title} ${progress} ${skipped}`, level, '  '));
+			}
+			else {
+				output.push(indentString(` ${utils.getSymbol(task, options)} ${task.title}${skipped}`, level, '  '));
+			}
 
 			if ((task.isPending() || task.isSkipped() || task.hasFailed()) && utils.isDefined(task.output)) {
 				let data = task.output;
@@ -36,7 +50,12 @@ const renderHelper = (tasks, options, level) => {
 			}
 
 			if ((task.isPending() || task.hasFailed() || options.collapse === false) && (task.hasFailed() || options.showSubtasks !== false) && task.subtasks.length > 0) {
-				output = output.concat(renderHelper(task.subtasks, options, level + 1));
+				let xoptions = options;
+				if ( options.aggregate === true ) {
+					xoptions = { hide: true };
+					Object.assign( xoptions , options );
+				}
+				output = output.concat(renderHelper(task.subtasks, xoptions, level + 1));
 			}
 		}
 	}
