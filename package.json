@@ -1,6 +1,6 @@
 {
   "name": "@aureooms/listr-aggregate-renderer",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Listr aggregate renderer",
   "license": "MIT",
   "repository": "SamVerschueren/listr-aggregate-renderer",
