@@ -7,26 +7,46 @@ const cliTruncate = require('cli-truncate');
 const stripAnsi = require('strip-ansi');
 const utils = require('./lib/utils');
 
+const elegantSpinner = require('elegant-spinner');
+
+const spinners = new WeakMap();
+
 const renderHelper = (tasks, options, level) => {
 	level = level || 0;
 
 	let output = [];
 
+	let i = 0;
+	let j = 0;
+
+	let pending = 0;
+	for ( const t of tasks ) pending += t.isPending();
+	const ntasks = tasks.length;
+
 	for (const task of tasks) {
 
-		if (options.hide === true && task.isCompleted()) continue;
+		if (options.hide && task.isCompleted()) continue;
 
 		if (task.isEnabled()) {
 
 			const skipped = task.isSkipped() ? ` ${chalk.dim('[skipped]')}` : '';
 
-			if ( options.showSubtasks !== false && options.aggregate === true && task.subtasks.length > 0 ) {
+			const nsubtasks = task.subtasks.length;
+
+			if ( options.showSubtasks !== false && options.aggregate && nsubtasks > 0 ) {
 				let done = 0;
 				for ( const t of task.subtasks ) done += t.isCompleted();
-				let total = task.subtasks.length;
-				let ratio = (done / total * 100).toFixed();
-				let progress = `(${done}/${total} ~ ${ratio}%)`;
+				const ratio = (done / nsubtasks * 100).toFixed();
+				const progress = `(${done}/${nsubtasks} ~ ${ratio}%)`;
 				output.push(indentString(` ${utils.getSymbol(task, options)} ${task.title} ${progress} ${skipped}`, level, '  '));
+			}
+			else if ( options.hide ) {
+				if ( i < options.maxsubtasks - 1 || pending <= options.maxsubtasks || task.hasFailed()  ) {
+					i += 1;
+					j += task.isPending();
+					output.push(indentString(` ${utils.getSymbol(task, options)} ${task.title}${skipped}`, level, '  '));
+				}
+				else continue;
 			}
 			else {
 				output.push(indentString(` ${utils.getSymbol(task, options)} ${task.title}${skipped}`, level, '  '));
@@ -49,15 +69,23 @@ const renderHelper = (tasks, options, level) => {
 				}
 			}
 
-			if ((task.isPending() || task.hasFailed() || options.collapse === false) && (task.hasFailed() || options.showSubtasks !== false) && task.subtasks.length > 0) {
+			if ((task.isPending() || task.hasFailed() || options.collapse === false) && (task.hasFailed() || options.showSubtasks !== false) && (task.hasFailed() || options.maxsubtasks > 0) && nsubtasks > 0) {
 				let xoptions = options;
-				if ( options.aggregate === true ) {
-					xoptions = { hide: true };
-					Object.assign( xoptions , options );
+				if ( options.aggregate ) {
+					xoptions = Object.assign( {} , options );
+					xoptions.hide = true;
 				}
 				output = output.concat(renderHelper(task.subtasks, xoptions, level + 1));
 			}
 		}
+	}
+
+	if ( options.hide && options.maxsubtasks > 0 && pending - j > 0 ) {
+		if ( !spinners.has( tasks ) ) {
+			spinners.set( tasks , elegantSpinner() );
+		}
+		const spinner = spinners.get( tasks );
+		output.push(indentString(` ${chalk.yellow(spinner())} ${pending-j} other tasks pending`, level, '  '));
 	}
 
 	return output.join('\n');
@@ -74,7 +102,10 @@ class UpdateRenderer {
 		this._options = Object.assign({
 			showSubtasks: true,
 			collapse: true,
-			clearOutput: false
+			clearOutput: false,
+			maxsubtasks: Infinity,
+			hide: false,
+			aggregate: false,
 		}, options);
 	}
 

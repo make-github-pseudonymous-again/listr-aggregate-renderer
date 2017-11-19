@@ -55,6 +55,41 @@ const tasks = new Listr([
 		task: () => delay(2000)
 	},
 	{
+		title: 'Counting to 7',
+		task: () => {
+			return new Listr([
+				{
+					title: '1',
+					task: () => delay(2000)
+				},
+				{
+					title: '2',
+					task: () => delay(3800)
+				},
+				{
+					title: '3',
+					task: () => delay(3800)
+				},
+				{
+					title: '4',
+					task: () => delay(4000)
+				},
+				{
+					title: '5',
+					task: () => delay(5500)
+				},
+				{
+					title: '6',
+					task: () => delay(6000)
+				},
+				{
+					title: '7',
+					task: () => delay(7000)
+				},
+			], {concurrent: true});
+		}
+	},
+	{
 		title: 'Run tests',
 		task: () => delay(2000).then(() => {
 			return new Observable(observer => {
@@ -79,7 +114,8 @@ const tasks = new Listr([
 	}
 ], {
 	renderer,
-	aggregate: true
+	aggregate: true,
+	maxsubtasks: 2,
 });
 
 tasks.run().catch(err => {
