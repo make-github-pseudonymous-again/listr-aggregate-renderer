@@ -20,7 +20,7 @@ const renderHelper = (tasks, options, level) => {
 	let j = 0;
 
 	let pending = 0;
-	for ( const t of tasks ) pending += t.isPending();
+	for ( const t of tasks ) pending += ( !t.isCompleted() && !t.isSkipped() && !t.hasFailed() ) ;
 	const ntasks = tasks.length;
 
 	for (const task of tasks) {
