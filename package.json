@@ -1,7 +1,7 @@
 {
   "name": "@aureooms/listr-aggregate-renderer",
   "description": "Listr aggregate renderer",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "author": {
     "name": "Aurélien Ooms",
     "email": "aurelien.ooms@gmail.com",
